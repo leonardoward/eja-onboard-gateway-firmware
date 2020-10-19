@@ -1,3 +1,15 @@
+/*LoRa Config
+ * This code uses InvertIQ function to create a simple Gateway/Node logic.
+  Gateway - Sends messages with enableInvertIQ()
+          - Receives messages with disableInvertIQ()
+  Node    - Sends messages with disableInvertIQ()
+          - Receives messages with enableInvertIQ()
+  With this arrangement a Gateway never receive messages from another Gateway
+  and a Node never receive message from another Node.
+  Only Gateway to Node and vice versa.
+  This code receives messages and sends a message every second.
+ * 
+ */
 // include libraries
 #include <WiFi.h>
 #include <DNSServer.h>
@@ -20,7 +32,7 @@
 #define RST_LORA 15             // LoRa radio reset
 #define IRQ_LORA 13             // LoRa Hardware interrupt pin
 #define PERIOD_TX_LORA 1000     // Period between Lora Transmissions
-#define PERIOD_ERASE_BUFF 10000 // Period between the erase of terminal msgs
+#define PERIOD_ERASE_BUFF 80000 // Period between the erase of terminal msgs
 #define DNS_PORT 53             // Port used by the DNS server
 #define WEB_SERVER_PORT 80      // Port used by the Asynchronous Web Server
 #define LORA_FREQUENCY 915E6    // Frequency used by the LoRa module
@@ -94,74 +106,10 @@ void setup() {
   // Start the dns server
   dnsServer.start(DNS_PORT, host, IP);
 
-  // Route for root / web page
-  server.on("/", HTTP_GET, [](AsyncWebServerRequest *request){
-    last_ap_request = millis();
-    request->send(SPIFFS, "/index.html", String(), false, processor);
-  });
-
-  // Route to load style.css file
-  server.on("/style.css", HTTP_GET, [](AsyncWebServerRequest *request){
-    last_ap_request = millis();
-    request->send(SPIFFS, "/style.css", "text/css");
-  });
-
-  // Route to set TOGGLE GPIO to HIGH
-  server.on("/toggle_led_on", HTTP_GET, [](AsyncWebServerRequest *request){
-    digitalWrite(LED_TOGGLE, HIGH);
-    last_ap_request = millis();
-    request->send(SPIFFS, "/toggle_led.html", String(), false, processor);
-  });
-
-  // Route to set TOGGLE GPIO to LOW
-  server.on("/toggle_led_off", HTTP_GET, [](AsyncWebServerRequest *request){
-    digitalWrite(LED_TOGGLE, LOW);
-    last_ap_request = millis();
-    request->send(SPIFFS, "/toggle_led.html", String(), false, processor);
-  });
-
-  // Route to load the jquery.min.js file
-  server.on("/jquery.min.js", HTTP_GET, [](AsyncWebServerRequest *request){
-    last_ap_request = millis();
-    request->send(SPIFFS, "/jquery.min.js", "text/javascript");
-  });
-
-  // Route to load the lora web page
-  server.on("/lora", HTTP_GET, [](AsyncWebServerRequest *request) {
-    last_ap_request = millis();
-    request->send(SPIFFS, "/lora.html", String(), false, processor);
-  });
-
-  // Route to load a json with the global terminal messages from lora
-  server.on("/terminal_messages", HTTP_GET, [](AsyncWebServerRequest *request) {
-    last_ap_request = millis();
-    request->send(200, "application/json", "{\"term\": \""+ terminal_messages+"\"}");
-  });
-
-  // Route to load a json with the terminal messages from lora
-  server.on("/lora_terminal_messages", HTTP_GET, [](AsyncWebServerRequest *request) {
-    last_ap_request = millis();
-    request->send(200, "application/json", "{\"term\": \""+ lora_all_msg+"\"}");
-  });
-
-  // Route to load the terminal web page
-  server.on("/terminal", HTTP_GET, [](AsyncWebServerRequest *request) {
-    last_ap_request = millis();
-    request->send(SPIFFS, "/terminal.html", String(), false, processor);
-  });
-
-  // Route to load the GPS web page
-  server.on("/gps", HTTP_GET, [](AsyncWebServerRequest *request) {
-    last_ap_request = millis();
-    request->send(SPIFFS, "/gps.html", String(), false, processor);
-  });
-
-  // Route to load a json with the GPS data
-  server.on("/gps_data", HTTP_GET, [](AsyncWebServerRequest *request) {
-    last_ap_request = millis();
-    request->send(200, "application/json", lora_rx_message);
-  });
-
+  //Add the html, css and js files to the web server
+  web_server_config();
+  //web_server_config_2();
+  
   // Start ElegantOTA
   AsyncElegantOTA.begin(&server);
 
@@ -342,4 +290,182 @@ void onTxDoneLoRa() {
   Serial.println("TxDone");     // Notify the end of transmission in the serial monitor
   lora_all_msg += "TxDone<br>"; // Store a message from the Lora process
   LoRa_rxMode();                // Activate lora's reception mode
+}
+
+//########################################
+//##              Web server            ##
+//########################################
+void web_server_config(){
+  // Route to load the sidebar.js file
+  server.on("/sidebar.js", HTTP_GET, [](AsyncWebServerRequest *request){
+    last_ap_request = millis();
+    request->send(SPIFFS, "/sidebar.js", "text/javascript");
+  });
+  
+  // Route for root / web page
+  server.on("/", HTTP_GET, [](AsyncWebServerRequest *request){
+    last_ap_request = millis();
+    request->send(SPIFFS, "/index.html", String(), false, processor);
+  });
+
+  // Route to load style.css file
+  server.on("/style.css", HTTP_GET, [](AsyncWebServerRequest *request){
+    last_ap_request = millis();
+    request->send(SPIFFS, "/style.css", "text/css");
+  });
+
+  // Route to load sidebar.css file
+  server.on("/sidebar.css", HTTP_GET, [](AsyncWebServerRequest *request){
+    last_ap_request = millis();
+    request->send(SPIFFS, "/sidebar.css", "text/css");
+  });
+
+  // Route to load header.css file
+  server.on("/header.css", HTTP_GET, [](AsyncWebServerRequest *request){
+    last_ap_request = millis();
+    request->send(SPIFFS, "/header.css", "text/css");
+  });
+
+
+  // Route to set TOGGLE GPIO to HIGH
+  server.on("/toggle_led_on", HTTP_GET, [](AsyncWebServerRequest *request){
+    digitalWrite(LED_TOGGLE, HIGH);
+    last_ap_request = millis();
+    request->send(SPIFFS, "/toggle_led.html", String(), false, processor);
+  });
+
+  // Route to set TOGGLE GPIO to LOW
+  server.on("/toggle_led_off", HTTP_GET, [](AsyncWebServerRequest *request){
+    digitalWrite(LED_TOGGLE, LOW);
+    last_ap_request = millis();
+    request->send(SPIFFS, "/toggle_led.html", String(), false, processor);
+  });
+
+  // Route to load the jquery.min.js file
+  server.on("/jquery.min.js", HTTP_GET, [](AsyncWebServerRequest *request){
+    last_ap_request = millis();
+    request->send(SPIFFS, "/jquery.min.js", "text/javascript");
+  });
+
+  // Route to load the lora web page
+  server.on("/lora", HTTP_GET, [](AsyncWebServerRequest *request) {
+    last_ap_request = millis();
+    request->send(SPIFFS, "/lora.html", String(), false, processor);
+  });
+
+  // Route to load a json with the global terminal messages from lora
+  server.on("/terminal_messages", HTTP_GET, [](AsyncWebServerRequest *request) {
+    last_ap_request = millis();
+    request->send(200, "application/json", "{\"term\": \""+ terminal_messages+"\"}");
+  });
+
+  // Route to load a json with the terminal messages from lora
+  server.on("/lora_terminal_messages", HTTP_GET, [](AsyncWebServerRequest *request) {
+    last_ap_request = millis();
+    request->send(200, "application/json", "{\"term\": \""+ lora_all_msg+"\"}");
+  });
+
+  // Route to load the terminal web page
+  server.on("/terminal", HTTP_GET, [](AsyncWebServerRequest *request) {
+    last_ap_request = millis();
+    request->send(SPIFFS, "/terminal.html", String(), false, processor);
+  });
+
+  // Route to load the GPS web page
+  server.on("/gps", HTTP_GET, [](AsyncWebServerRequest *request) {
+    last_ap_request = millis();
+    request->send(SPIFFS, "/gps.html", String(), false, processor);
+  });
+
+  // Route to load a json with the GPS data
+  server.on("/gps_data", HTTP_GET, [](AsyncWebServerRequest *request) {
+    last_ap_request = millis();
+    request->send(200, "application/json", lora_rx_message);
+  });
+}
+
+void web_server_config_2(){
+  // Route to load adminlte.min.css file
+  server.on("/adminlte.min.css", HTTP_GET, [](AsyncWebServerRequest *request){
+    last_ap_request = millis();
+    request->send(SPIFFS, "/adminlte.min.css", "text/css");
+  });
+  // Route to load adminlte.min.css file
+  server.on("/all.min.css", HTTP_GET, [](AsyncWebServerRequest *request){
+    last_ap_request = millis();
+    request->send(SPIFFS, "/all.min.css", "text/css");
+  });
+  // Route to load preloader.css file
+  server.on("/preloader.css", HTTP_GET, [](AsyncWebServerRequest *request){
+    last_ap_request = millis();
+    request->send(SPIFFS, "/preloader.css", "text/css");
+  });
+  // Route to load adminlte.js file
+  server.on("/adminlte.js", HTTP_GET, [](AsyncWebServerRequest *request){
+    last_ap_request = millis();
+    request->send(SPIFFS, "/adminlte.js", "text/javascript");
+  });
+  // Route to load bootstrap.bundle.min.js file
+  server.on("/bootstrap.bundle.min.js", HTTP_GET, [](AsyncWebServerRequest *request){
+    last_ap_request = millis();
+    request->send(SPIFFS, "/bootstrap.bundle.min.js", "text/javascript");
+  });
+  // Route to load bootstrap.bundle.min.js file
+  server.on("/jquery.min.js", HTTP_GET, [](AsyncWebServerRequest *request){
+    last_ap_request = millis();
+    request->send(SPIFFS, "/jquery.min.js", "text/javascript");
+  });
+  // Route for root / web page
+  server.on("/", HTTP_GET, [](AsyncWebServerRequest *request){
+    last_ap_request = millis();
+    request->send(SPIFFS, "/index.html", String(), false, processor);
+  });
+  // Route to set TOGGLE GPIO to HIGH
+  server.on("/toggle_led_on", HTTP_GET, [](AsyncWebServerRequest *request){
+    digitalWrite(LED_TOGGLE, HIGH);
+    last_ap_request = millis();
+    request->send(SPIFFS, "/toggle_led.html", String(), false, processor);
+  });
+
+  // Route to set TOGGLE GPIO to LOW
+  server.on("/toggle_led_off", HTTP_GET, [](AsyncWebServerRequest *request){
+    digitalWrite(LED_TOGGLE, LOW);
+    last_ap_request = millis();
+    request->send(SPIFFS, "/toggle_led.html", String(), false, processor);
+  });
+  // Route to load the lora web page
+  server.on("/lora.html", HTTP_GET, [](AsyncWebServerRequest *request) {
+    last_ap_request = millis();
+    request->send(SPIFFS, "/lora.html", String(), false, processor);
+  });
+
+  // Route to load a json with the global terminal messages from lora
+  server.on("/terminal_messages", HTTP_GET, [](AsyncWebServerRequest *request) {
+    last_ap_request = millis();
+    request->send(200, "application/json", "{\"term\": \""+ terminal_messages+"\"}");
+  });
+
+  // Route to load a json with the terminal messages from lora
+  server.on("/lora_terminal_messages", HTTP_GET, [](AsyncWebServerRequest *request) {
+    last_ap_request = millis();
+    request->send(200, "application/json", "{\"term\": \""+ lora_all_msg+"\"}");
+  });
+
+  // Route to load the terminal web page
+  server.on("/terminal.html", HTTP_GET, [](AsyncWebServerRequest *request) {
+    last_ap_request = millis();
+    request->send(SPIFFS, "/terminal.html", String(), false, processor);
+  });
+
+  // Route to load the GPS web page
+  server.on("/gps.html", HTTP_GET, [](AsyncWebServerRequest *request) {
+    last_ap_request = millis();
+    request->send(SPIFFS, "/gps.html", String(), false, processor);
+  });
+
+  // Route to load a json with the GPS data
+  server.on("/gps_data", HTTP_GET, [](AsyncWebServerRequest *request) {
+    last_ap_request = millis();
+    request->send(200, "application/json", lora_rx_message);
+  });
 }

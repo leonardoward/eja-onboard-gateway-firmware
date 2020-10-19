@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+
+  <title>EJA Onboard Gateway | GPS</title>
+
+  <!-- Font Awesome Icons -->
+  <link rel="stylesheet" type="text/css" href="all.min.css">
+  <!-- Theme style -->
+  <link rel="stylesheet" type="text/css" href="adminlte.min.css">
+  <!-- Google Font: Source Sans Pro -->
+  <link href="webfonts/fa-solid-900.ttf" rel="stylesheet">
+  <link href="webfonts/fa-solid-900.woff" rel="stylesheet">
+  <link href="webfonts/fa-solid-900.woff2" rel="stylesheet">
+</head>
+<body class="hold-transition sidebar-mini layout-fixed layout-navbar-fixed layout-footer-fixed">
+<div class="wrapper">
+  <!-- Navbar -->
+  <nav class="main-header navbar navbar-expand navbar-white navbar-light">
+    <!-- Left navbar links -->
+    <ul class="navbar-nav">
+      <li class="nav-item">
+        <a class="nav-link" data-widget="pushmenu" href="#" role="button"><i class="fas fa-bars"></i></a>
+      </li>
+      <li class="nav-item d-none d-sm-inline-block">
+        <a href="/" class="nav-link">Home</a>
+      </li>
+    </ul>
+
+    <h4 class="brand-text text-dark">EJA Onboard Gateway</h4>
+
+    <!-- Right navbar links -->
+    <ul class="navbar-nav ml-auto">
+      <!-- Notifications Dropdown Menu -->
+      <li class="nav-item dropdown">
+        <a class="nav-link" data-toggle="dropdown" href="#">
+          <i class="fas fa-project-diagram"></i>
+          <span class="badge badge-warning navbar-badge">15</span>
+        </a>
+        <div class="dropdown-menu dropdown-menu-lg dropdown-menu-right">
+          <span class="dropdown-item dropdown-header">15 Notifications</span>
+          <div class="dropdown-divider"></div>
+          <a href="#" class="dropdown-item">
+            <i class="fas fa-envelope mr-2"></i> 4 new messages
+            <span class="float-right text-muted text-sm">3 mins</span>
+          </a>
+          <div class="dropdown-divider"></div>
+          <a href="#" class="dropdown-item">
+            <i class="fas fa-users mr-2"></i> 8 friend requests
+            <span class="float-right text-muted text-sm">12 hours</span>
+          </a>
+          <div class="dropdown-divider"></div>
+          <a href="#" class="dropdown-item">
+            <i class="fas fa-file mr-2"></i> 3 new reports
+            <span class="float-right text-muted text-sm">2 days</span>
+          </a>
+          <div class="dropdown-divider"></div>
+          <a href="#" class="dropdown-item dropdown-footer">See All Notifications</a>
+        </div>
+      </li>
+    </ul>
+  </nav>
+  <!-- /.navbar -->
+
+  <!-- Main Sidebar Container -->
+  <aside class="main-sidebar sidebar-dark-primary elevation-4">
+    <!-- Brand Logo -->
+    <a href="/" class="brand-link">
+      <span class="brand-text font-weight-light">EJA Onboard Gateway</span>
+    </a>
+
+    <!-- Sidebar -->
+    <div class="sidebar">
+      <!-- Sidebar Menu -->
+      <nav class="mt-2">
+        <ul class="nav nav-pills nav-sidebar flex-column" data-widget="treeview" role="menu" data-accordion="false">
+          <!-- Add icons to the links using the .nav-icon class
+               with font-awesome or any other icon font library -->
+          <li class="nav-item">
+            <a href="gps.html" class="nav-link">
+              <i class="nav-icon fas fa-map-marker-alt"></i>
+              <p>
+                GPS
+              </p>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a href="lora.html" class="nav-link">
+              <i class="nav-icon fas fa-wifi"></i>
+              <p>
+                LoRa
+              </p>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a href="terminal.html" class="nav-link">
+              <i class="nav-icon fas fa-terminal"></i>
+              <p>
+                Terminal
+              </p>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a href="/toggle_led_on" class="nav-link">
+              <i class="nav-icon fas fa-lightbulb"></i>
+              <p>
+                Led Test
+              </p>
+            </a>
+          </li>
+          <li class="nav-header">MISCELLANEOUS</li>
+          <li class="nav-item">
+            <a href="documentaton.html" class="nav-link">
+              <i class="nav-icon fas fa-file"></i>
+              <p>Documentation</p>
+            </a>
+          </li>
+        </ul>
+      </nav>
+      <!-- /.sidebar-menu -->
+    </div>
+    <!-- /.sidebar -->
+  </aside>
+
+  <!-- Content Wrapper. Contains page content -->
+  <div class="content-wrapper">
+    <!-- Content Header (Page header) -->
+    <div class="content-header">
+      <div class="container-fluid">
+        <div class="row mb-2">
+          <div class="col-sm-6">
+            <ol class="breadcrumb float-sm-right">
+              <li class="breadcrumb-item"><a href="/">Home</a></li>
+              <li class="breadcrumb-item active"><a href="gps.html">GPS</a></li>
+            </ol>
+          </div><!-- /.col -->
+        </div><!-- /.row -->
+      </div><!-- /.container-fluid -->
+    </div>
+    <!-- /.content-header -->
+
+    <!-- Main content -->
+    <section class="content">
+      <div class="container-fluid">
+        <!-- Info boxes -->
+        <div class="row">
+          <div class="col-12">
+          <!-- TABLE: LATEST ORDERS -->
+            <div class="card">
+              <div class="card-header border-transparent">
+                <h3 class="card-title">Buoy <span id='id'></span></h3>
+
+                <div class="card-tools">
+                  <button type="button" class="btn btn-tool" data-card-widget="collapse">
+                    <i class="fas fa-minus"></i>
+                  </button>
+                  <button type="button" class="btn btn-tool" data-card-widget="remove">
+                    <i class="fas fa-times"></i>
+                  </button>
+                </div>
+              </div>
+              <!-- /.card-header -->
+              <div class="card-body p-0">
+                <div class="table-responsive">
+                  <table class="table m-0">
+                    <thead>
+                    <tr>
+                      <th>ID</th>
+                      <th>Value</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr>
+                      <td>Sattelites</td>
+                      <td>
+                        <div class="sparkbar" data-color="#00a65a" data-height="20"><span id='sattelites'></span></div>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td>HDOP</td>
+                      <td>
+                        <div class="sparkbar" data-color="#f39c12" data-height="20"><span id='hdop'></span></div>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td>Lattitude</td>
+                      <td>
+                        <div class="sparkbar" data-color="#f56954" data-height="20"><span id='lat'></span></div>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td>Longitude</td>
+                      <td>
+                        <div class="sparkbar" data-color="#00c0ef" data-height="20"><span id='lng'></span></div>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td>Age</td>
+                      <td>
+                        <div class="sparkbar" data-color="#f39c12" data-height="20"><span id='age'></div>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td>DateTime</td>
+                      <td>
+                        <div class="sparkbar" data-color="#f56954" data-height="20"><span id='datetime'></span></div>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td>Altitude</td>
+                      <td>
+                        <div class="sparkbar" data-color="#00a65a" data-height="20"><span id='altitude'></span></div>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td>Course</td>
+                      <td>
+                        <div class="sparkbar" data-color="#00a65a" data-height="20"><span id='course_deg'></span></div>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td>Speed</td>
+                      <td>
+                        <div class="sparkbar" data-color="#00a65a" data-height="20"><span id='speed_kmph'></div>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td>isValid</td>
+                      <td>
+                        <div class="sparkbar" data-color="#00a65a" data-height="20"><span id='isValid'></span></div>
+                      </td>
+                    </tr>
+                    </tbody>
+                  </table>
+                </div>
+                <!-- /.table-responsive -->
+              </div>
+              <!-- /.card-footer -->
+            </div>
+          </div>
+        </div>
+      </div><!--/. container-fluid -->
+    </section>
+    <!-- /.content -->
+  </div>
+  <!-- /.content-wrapper -->
+
+  <!-- Control Sidebar -->
+  <aside class="control-sidebar control-sidebar-dark">
+    <!-- Control sidebar content goes here -->
+  </aside>
+  <!-- /.control-sidebar -->
+
+  <!-- Main Footer -->
+  <footer class="main-footer">
+    <strong>Copyright &copy; 2014-2019 <a href="http://adminlte.io">AdminLTE.io</a>.</strong>
+    All rights reserved.
+    <div class="float-right d-none d-sm-inline-block">
+      <b>Version</b> 3.0.5
+    </div>
+  </footer>
+</div>
+<!-- ./wrapper -->
+
+<!-- REQUIRED SCRIPTS -->
+<!-- jQuery -->
+<script src="jquery.min.js"></script>
+<!-- Bootstrap -->
+<script src="bootstrap.bundle.min.js"></script>
+<!-- AdminLTE App -->
+<script src="adminlte.js"></script>
+
+
+</body>
+<script>
+  $(function() {
+
+    // request data every 5 seconds
+    setInterval(requestData, 1000);
+
+    function requestData() {
+
+      // ajax request for latest sensor data
+      $.get("/gps_data")
+        .done(function(data) {
+
+          console.log(data);  // debugging - remove when satisfied
+
+          if (data) { // if the returned data is not null, update the values
+            $("#id").text(data.id);
+            $("#sattelites").text(data.sattelites);
+            $("#hdop").text(data.hdop);
+            $("#lat").text(data.lat);
+            $("#lng").text(data.lng);
+            $("#age").text(data.age);
+            $("#datetime").text(data.datetime);
+            $("#altitude").text(data.altitude);
+            $("#course_deg").text(data.course_deg);
+            $("#speed_kmph").text(data.speed_kmph);
+            $("#isValid").text(data.isValid);
+          } else { // a problem occurred
+            $("#id").text("?");
+            $("#sattelites").text("?");
+            $("#hdop").text("?");
+            $("#lat").text("?");
+            $("#lng").text("?");
+            $("#age").text("?");
+            $("#datetime").text("?");
+            $("#altitude").text("?");
+            $("#course_deg").text("?");
+            $("#speed_kmph").text("?");
+            $("#isValid").text("?");
+          }
+        }).fail(function() {
+          console.log("The was a problem retrieving the data.");
+        });
+    }
+  });
+</script>
+</html>

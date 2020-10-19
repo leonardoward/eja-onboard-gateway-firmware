@@ -1,13 +1,27 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>EJA Onboard Gateway - Toggle Led</title>
+  <title>EJA Onboard Gateway | LED Test</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="icon" href="data:,">
   <link rel="stylesheet" type="text/css" href="style.css">
+  <link rel="stylesheet" type="text/css" href="sidebar.css">
+  <link rel="stylesheet" type="text/css" href="header.css">
+  <script src="sidebar.js"></script>
 </head>
 <body>
-  <h1>EJA Onboard Gateway - Toggle Led</h1>
+  <div id="mySidenav" class="sidenav">
+    <a href="javascript:void(0)" class="closebtn" onclick="closeNav()">&times;</a>
+    <a href="/">Home</a>
+    <a href="/gps">GPS</a>
+    <a href="/lora">LoRa</a>
+    <a href="/terminal">Terminal</a>
+    <a href="/toggle_led_on">LED Test</a>
+  </div>
+  <div class="header">
+    <span style="font-size:30px;cursor:pointer" onclick="openNav()">&#9776; EJA Onboard Gateway</span>
+  </div>
+  <h1>LED Test</h1>
   <p>GPIO state: <strong> %STATE%</strong></p>
   <p><a href="/toggle_led_on"><button class="button">ON</button></a></p>
   <p><a href="/toggle_led_off"><button class="button button2">OFF</button></a></p>

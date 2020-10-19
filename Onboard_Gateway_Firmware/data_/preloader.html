@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+
+  <title>EJA Onboard Gateway | Home</title>
+
+  <!-- Font Awesome Icons -->
+  <link rel="stylesheet" type="text/css" href="all.min.css">
+  <!-- Theme style -->
+  <link rel="stylesheet" type="text/css" href="adminlte.min.css">
+  <!-- Preloader -->
+  <link rel="stylesheet" type="text/css" href="preloader.css">
+
+  <!-- REQUIRED SCRIPTS -->
+  <!-- jQuery -->
+  <script src="jquery.min.js"></script>
+  <!-- Bootstrap -->
+  <script src="bootstrap.bundle.min.js"></script>
+  <!-- AdminLTE App -->
+  <script src="adminlte.js"></script>
+</head>
+<body onload="loaderFunction()" style="margin:0;">
+
+<div id="loader"></div>
+
+<div style="display:none;" id="displayPage" class="animate-bottom">
+  <h2>Tada!</h2>
+  <p>Some text in my newly loaded page..</p>
+</div>
+
+<script>
+var loaderDelay;
+
+$WIN = $(window);
+
+function loaderFunction() {
+  loaderDelay = setTimeout(showPage, 3000);
+}
+
+function showPage() {
+  document.getElementById("loader").style.display = "none";
+  document.getElementById("displayPage").style.display = "block";
+}
+
+$WIN.on('load', function() {showPage()});
+</script>
+
+</html>
