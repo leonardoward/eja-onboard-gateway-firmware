@@ -41,15 +41,15 @@ http://www.onboard_gateway.eja/
 
 The previous link displays the web page used for HOME:
 
-![alt text](./img/home.jpg "Home")
+<img src="./img/home.jpg" width="50%">
 
 There is a header with the name "EJA Onboard Gateway" that opens a sidebar with links to the different test functionalities. It is also possible to access those pages using the buttons in HOME.
 
-![alt text](./img/menu.jpg "Menu")
+<img src="./img/menu.jpg" width="50%">
 
 The page http://www.onboard_gateway.eja/gps shows the data from the GPS module.
 
-![alt text](./img/gps.jpg "GPS")
+<img src="./img/gps.jpg" width="50%">
 
 The page http://www.onboard_gateway.eja/lora shows internal messages related to LoRa. In the ESP32 that information is stored in the variable:
 
@@ -57,7 +57,7 @@ The page http://www.onboard_gateway.eja/lora shows internal messages related to 
 String lora_all_msg = "";
 ```
 
-![alt text](./img/lora_01.jpg "LoRa")
+<img src="./img/lora_01.jpg" width="50%">
 
 The page http://www.onboard_gateway.eja/terminal shows internal messages. In the ESP32 that information is stored in the variable:
 
@@ -65,7 +65,7 @@ The page http://www.onboard_gateway.eja/terminal shows internal messages. In the
 String terminal_messages = "";
 ```
 
-![alt text](./img/terminal.jpg "Terminal")
+<img src="./img/terminal.jpg" width="50%">
 
 There is an additional page http://www.onboard_gateway.eja/toggle_led_on that can be use to change the state of a LED, the GPIO port used is define in the following variable of the script:
 
@@ -75,6 +75,6 @@ There is an additional page http://www.onboard_gateway.eja/toggle_led_on that ca
 
 The buttons in the page (ON and OFF) can be used to change the state of the LED.
 
-![alt text](./img/led_test_on.jpg "LED Test On")
+<img src="./img/led_test_on.jpg" width="50%">
 
-![alt text](./img/led_test_off.jpg "LED Test Off")
+<img src="./img/led_test_off.jpg" width="50%">
