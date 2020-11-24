@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>EJA Onboard Gateway | LoRa</title>
+  <title>EJA Onboard Gateway | Get Timer</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="icon" href="data:,">
   <link rel="stylesheet" type="text/css" href="style.css">
@@ -23,8 +23,10 @@
   <div class="header">
     <span style="font-size:30px;cursor:pointer" onclick="openNav()">&#9776; EJA Onboard Gateway</span>
   </div>
-  <h1>LoRa</h1>
-  <p>Terminal: </p><br><span id='term'></span>
+  <h1>Timer</h1>
+  <p id='timeDescription' style="display:none;">Hours:Min:Sec</p>
+  <p><span id='remaining_time'></span></p>
+  <p><a href="/deletetimer"><button class="button" id="deleteBtn" style="display:none;">Delete Timer</button></a></p>
 </body>
 <script>
   $(function() {
@@ -35,15 +37,24 @@
     function requestData() {
 
       // ajax request for latest sensor data
-      $.get("/lora_terminal_messages")
+      $.get("/timer_data")
         .done(function(data) {
 
           console.log(data);  // debugging - remove when satisfied
 
           if (data) { // if the returned data is not null, update the values
-            $("#term").text(data.term);
+            $("#remaining_time").text(data.remaining_time);
+            if(data.enable_delete_button > 0){
+              document.getElementById("deleteBtn").disabled = false;
+              document.getElementById("deleteBtn").style.display = "inline";
+              document.getElementById("timeDescription").style.display = "inline";
+            } else {
+              document.getElementById("deleteBtn").disabled = true;
+              document.getElementById("deleteBtn").style.display = "none";
+              document.getElementById("timeDescription").style.display = "none";
+            }
           } else { // a problem occurred
-            $("#term").text("?");
+            $("#remaining_time").text("?");
           }
         }).fail(function() {
           console.log("The was a problem retrieving the data.");

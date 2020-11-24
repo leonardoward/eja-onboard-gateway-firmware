@@ -36,6 +36,9 @@
 #define DNS_PORT 53             // Port used by the DNS server
 #define WEB_SERVER_PORT 80      // Port used by the Asynchronous Web Server
 #define LORA_FREQUENCY 915E6    // Frequency used by the LoRa module
+#define TIME_PARAM_INPUT_1 "hours"  // Params used to parse the html form submit
+#define TIME_PARAM_INPUT_2 "min"    // Params used to parse the html form submit
+#define TIME_PARAM_INPUT_3 "sec"    // Params used to parse the html form submit
 
 // Server credentials
 const char* host = "www.onboard_gateway.eja";
@@ -63,6 +66,16 @@ unsigned long last_ap_request = 0;
 
 //GPS received with LoRa
 String lora_rx_message = "";
+
+// Variables of the timer
+int timer_end_hours = 0;
+int timer_end_min = 0;
+int timer_end_sec = 0;
+unsigned long timer_init_millis = 0;
+unsigned long timer_end_millis = 0;
+unsigned long timer_current = 0;
+
+bool send_updated_timer = false;
 
 void setup() {
   // Initialize serial communication (used for debugging)
@@ -108,7 +121,6 @@ void setup() {
 
   //Add the html, css and js files to the web server
   web_server_config();
-  //web_server_config_2();
   
   // Start ElegantOTA
   AsyncElegantOTA.begin(&server);
@@ -144,15 +156,25 @@ void loop(){
 
   // Transmit LoRa msg every PERIOD_TX_LORA millis
   if (runEvery(PERIOD_TX_LORA, &lora_last_tx)) {
-    // Prepare LoRa TX message
-    String message = "HeLoRa World! ";
-    message += "I'm a Gateway! ";
-    message += millis();
-
+    String message = "";
+    String messageid = "";
+    if(send_updated_timer == true){ // Update the timer values
+      message = "{\"type\": \"timer\",";
+      message += " \"init_ms\": \"" + String(timer_init_millis) + "\",";
+      message += " \"end_ms\": \"" + String(timer_end_millis) + "\"}";
+      messageid = "Timer Update";
+    }else{                          // Send default message
+      // Prepare LoRa TX message
+      message = "HeLoRa World! ";
+      message += "I'm a Gateway! Runtime:";
+      message += millis();
+      messageid = "Default";
+    }
+    
     LoRa_sendMessage(message);    // Send a message
 
-    lora_all_msg += "Send Message!<br>";
-    Serial.println("Send Message!");
+    lora_all_msg += "LoRaTX " + messageid + "<br>";
+    Serial.println("LoRaTX "+messageid);
 
   }
 
@@ -271,9 +293,52 @@ void onReceiveLora(int packetSize) {
   }
 
   // Show the received message in serial monitor
-  Serial.print("Gateway Receive: ");
+  Serial.print("Gateway Received: ");
   Serial.println(message);
 
+  // Parse message
+  int init_index = 0;
+  int end_index = message.indexOf(':', init_index);
+  String json_param = message.substring(message.indexOf('"', init_index) + 1, end_index - 1);
+  String json_value = message.substring(message.indexOf('"', end_index) + 1 , message.indexOf(',', end_index) - 1);
+  unsigned long new_timer_init_millis = 0;
+  unsigned long new_timer_end_millis = 0;
+  
+  if(json_param.equals("type")){
+    if(json_value.equals("timer")){     
+      init_index = message.indexOf(',', end_index);
+      end_index = message.indexOf(':', init_index);
+      json_param = message.substring(message.indexOf('"', init_index) + 1, end_index - 1);
+      json_value = message.substring(message.indexOf('"', end_index) + 1 , message.indexOf(',', end_index) - 1);
+      if(json_param.equals("init_ms")) new_timer_init_millis = strtoul(json_value.c_str(), NULL, 10);
+      init_index = message.indexOf(',', end_index);
+      end_index = message.indexOf(':', init_index);
+      json_param = message.substring(message.indexOf('"', init_index) + 1, end_index - 1);
+      json_value = message.substring(message.indexOf('"', end_index) + 1 , message.indexOf(',', end_index) - 1);
+      if(json_param.equals("end_ms")) new_timer_end_millis = strtoul(json_value.c_str(), NULL, 10);
+      Serial.println("Type:timer");
+      Serial.println("Init:"+String(new_timer_init_millis)+" ms");
+      Serial.println("End:"+String(new_timer_end_millis)+" ms");
+      if(send_updated_timer == true){               // The device is sending an updater timer
+        Serial.println("Checking timer variables...");
+        // Check if the timer has been updated in the Buoy
+        if(timer_init_millis == new_timer_init_millis && timer_end_millis == new_timer_end_millis){
+          // The timer variables have been updated
+          send_updated_timer = false;
+          Serial.println("Updated timer variables");
+        }else{
+          Serial.println("The timer variables haven't been updated");
+        }
+      }else{
+        timer_init_millis = new_timer_init_millis;
+        timer_end_millis = new_timer_end_millis;
+      }
+      String timer_data = get_remaining_time(timer_end_millis);     
+      Serial.println("Timer Data:"+timer_data);
+    } 
+  }
+  
+  
   // Store the message in the string with all messages associated to lora
   lora_all_msg += "Gateway Receive: <br>";
   lora_all_msg += message + "<br>";
@@ -382,90 +447,97 @@ void web_server_config(){
     last_ap_request = millis();
     request->send(200, "application/json", lora_rx_message);
   });
-}
 
-void web_server_config_2(){
-  // Route to load adminlte.min.css file
-  server.on("/adminlte.min.css", HTTP_GET, [](AsyncWebServerRequest *request){
-    last_ap_request = millis();
-    request->send(SPIFFS, "/adminlte.min.css", "text/css");
-  });
-  // Route to load adminlte.min.css file
-  server.on("/all.min.css", HTTP_GET, [](AsyncWebServerRequest *request){
-    last_ap_request = millis();
-    request->send(SPIFFS, "/all.min.css", "text/css");
-  });
-  // Route to load preloader.css file
-  server.on("/preloader.css", HTTP_GET, [](AsyncWebServerRequest *request){
-    last_ap_request = millis();
-    request->send(SPIFFS, "/preloader.css", "text/css");
-  });
-  // Route to load adminlte.js file
-  server.on("/adminlte.js", HTTP_GET, [](AsyncWebServerRequest *request){
-    last_ap_request = millis();
-    request->send(SPIFFS, "/adminlte.js", "text/javascript");
-  });
-  // Route to load bootstrap.bundle.min.js file
-  server.on("/bootstrap.bundle.min.js", HTTP_GET, [](AsyncWebServerRequest *request){
-    last_ap_request = millis();
-    request->send(SPIFFS, "/bootstrap.bundle.min.js", "text/javascript");
-  });
-  // Route to load bootstrap.bundle.min.js file
-  server.on("/jquery.min.js", HTTP_GET, [](AsyncWebServerRequest *request){
-    last_ap_request = millis();
-    request->send(SPIFFS, "/jquery.min.js", "text/javascript");
-  });
-  // Route for root / web page
-  server.on("/", HTTP_GET, [](AsyncWebServerRequest *request){
-    last_ap_request = millis();
-    request->send(SPIFFS, "/index.html", String(), false, processor);
-  });
-  // Route to set TOGGLE GPIO to HIGH
-  server.on("/toggle_led_on", HTTP_GET, [](AsyncWebServerRequest *request){
-    digitalWrite(LED_TOGGLE, HIGH);
-    last_ap_request = millis();
-    request->send(SPIFFS, "/toggle_led.html", String(), false, processor);
+  // Route to change the timer (web page)
+  server.on("/timer", HTTP_GET, [](AsyncWebServerRequest *request) {
+    if(timer_end_millis > timer_init_millis){
+      request->send(SPIFFS, "/gettimer.html", String(), false, processor);
+    } else {
+      request->send(SPIFFS, "/settimer.html", String(), false, processor);
+    }
   });
 
-  // Route to set TOGGLE GPIO to LOW
-  server.on("/toggle_led_off", HTTP_GET, [](AsyncWebServerRequest *request){
-    digitalWrite(LED_TOGGLE, LOW);
-    last_ap_request = millis();
-    request->send(SPIFFS, "/toggle_led.html", String(), false, processor);
+  // Route to delete the timer (web page)
+  server.on("/deletetimer", HTTP_GET, [](AsyncWebServerRequest *request) {
+    timer_init_millis = 0;
+    timer_end_millis = 0; 
+    request->send(SPIFFS, "/settimer.html", String(), false, processor);
   });
-  // Route to load the lora web page
-  server.on("/lora.html", HTTP_GET, [](AsyncWebServerRequest *request) {
-    last_ap_request = millis();
-    request->send(SPIFFS, "/lora.html", String(), false, processor);
+
+  // Send a GET request to <ESP_IP>/get?input1=<inputMessage>
+  server.on("/setTime", HTTP_GET, [] (AsyncWebServerRequest *request) {
+    
+    String inputHours = "0";
+    String inputMin = "0";
+    String inputSec = "0";
+
+    // GET input1 value on <ESP_IP>/get?input1=<inputMessage>
+    if (request->hasParam(TIME_PARAM_INPUT_1)) {
+      inputHours = request->getParam(TIME_PARAM_INPUT_1)->value();
+      timer_end_hours = inputHours.toInt();
+      if (0 > timer_end_hours || 23 < timer_end_hours) timer_end_hours = 0;
+    }
+    // GET input2 value on <ESP_IP>/get?input2=<inputMessage>
+    if (request->hasParam(TIME_PARAM_INPUT_2)) {
+      inputMin = request->getParam(TIME_PARAM_INPUT_2)->value();
+      timer_end_min = inputMin.toInt();
+      if (0 > timer_end_min || 59 < timer_end_min) timer_end_min = 0;
+    }
+    // GET input3 value on <ESP_IP>/get?input3=<inputMessage>
+    if (request->hasParam(TIME_PARAM_INPUT_3)) {
+      inputSec = request->getParam(TIME_PARAM_INPUT_3)->value();
+      timer_end_sec = inputSec.toInt();
+      if (0 > timer_end_sec || 59 < timer_end_sec) timer_end_sec = 0;
+    }
+    timer_init_millis = millis();
+    timer_end_millis = timer_init_millis + timer_end_sec * 1000 + timer_end_min * 60 * 1000 + timer_end_hours * 60 * 60 * 1000;
+    timer_end_hours = 0;
+    timer_end_min = 0;
+    timer_end_sec = 0;
+    //Serial.println("Time Input - Hours : " + inputHours + " - Min : " + inputMin + " - Sec : " + inputSec);
+    terminal_messages += "Time Input - H:" + inputHours + " - M:" + inputMin + " - S:" + inputSec;
+    //request->send(200, "text/html", "HTTP GET request sent to Buoy B<br>Hours : " + inputHours + "<br>Min : " + inputMin + "<br>Sec : " + inputSec + "<br><a href=\"/\">Return to Home Page</a>");
+    if(timer_end_millis > timer_init_millis){
+      send_updated_timer = true;                                            // Update timer in Buoy
+      request->send(SPIFFS, "/gettimer.html", String(), false, processor);
+    } else {
+      request->send(SPIFFS, "/settimer.html", String(), false, processor);
+    }
   });
 
   // Route to load a json with the global terminal messages from lora
-  server.on("/terminal_messages", HTTP_GET, [](AsyncWebServerRequest *request) {
-    last_ap_request = millis();
-    request->send(200, "application/json", "{\"term\": \""+ terminal_messages+"\"}");
+  server.on("/timer_data", HTTP_GET, [](AsyncWebServerRequest *request) {
+    String timer_data = "";
+    int enable_button = 1;
+    String timer_json = "";
+    if(send_updated_timer == true){
+      timer_data = "Updating timer in Buoy...";
+      enable_button = 0;
+    }else{
+      timer_data = get_remaining_time(timer_end_millis);
+    }
+    timer_json = "{\"remaining_time\": \"" + timer_data +"\",";
+    timer_json += " \"enable_delete_button\": "+String(enable_button)+"}";
+    request->send(200, "application/json", timer_json);
   });
+}
 
-  // Route to load a json with the terminal messages from lora
-  server.on("/lora_terminal_messages", HTTP_GET, [](AsyncWebServerRequest *request) {
-    last_ap_request = millis();
-    request->send(200, "application/json", "{\"term\": \""+ lora_all_msg+"\"}");
-  });
-
-  // Route to load the terminal web page
-  server.on("/terminal.html", HTTP_GET, [](AsyncWebServerRequest *request) {
-    last_ap_request = millis();
-    request->send(SPIFFS, "/terminal.html", String(), false, processor);
-  });
-
-  // Route to load the GPS web page
-  server.on("/gps.html", HTTP_GET, [](AsyncWebServerRequest *request) {
-    last_ap_request = millis();
-    request->send(SPIFFS, "/gps.html", String(), false, processor);
-  });
-
-  // Route to load a json with the GPS data
-  server.on("/gps_data", HTTP_GET, [](AsyncWebServerRequest *request) {
-    last_ap_request = millis();
-    request->send(200, "application/json", lora_rx_message);
-  });
+String get_remaining_time(unsigned long timer_end_millis){
+  unsigned long timer_current = millis();
+  String timer_data = "";
+  if(timer_end_millis > timer_current){
+    int remainig_hours = int((timer_end_millis-timer_current)/(60 * 60 * 1000));
+    String remainig_hours_str = String(remainig_hours);
+    if(remainig_hours < 10) remainig_hours_str = "0" + remainig_hours_str;
+    int remainig_min = int((timer_end_millis-timer_current)/(60 * 1000)) - remainig_hours * 60;
+    String remainig_min_str = String(remainig_min);
+    if(remainig_min < 10) remainig_min_str = "0" + remainig_min_str;
+    int remainig_sec = int((timer_end_millis-timer_current)/(1000)) - remainig_hours * 60 * 60 - remainig_min * 60;
+    String remainig_sec_str = String(remainig_sec);
+    if(remainig_sec < 10) remainig_sec_str = "0" + remainig_sec_str;
+    timer_data = remainig_hours_str + ":" + remainig_min_str + ":" + remainig_sec_str;
+  }else{
+    timer_data = "00:00:00";
+  }
+  return timer_data;
 }
