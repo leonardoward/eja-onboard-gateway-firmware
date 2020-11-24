@@ -24,7 +24,8 @@
     <span style="font-size:30px;cursor:pointer" onclick="openNav()">&#9776; EJA Onboard Gateway</span>
   </div>
   <h1>Timer</h1>
-  <form action="/setTime">
+  <p id="resetingTimerMsg" style="display:none;">Reseting timer in Buoy...</p>
+  <form action="/setTime" id="timerForm" style="display:none;">
     <p>
       <label for="hours">Hours:</label>
       <label for="min">Min:</label>
@@ -185,4 +186,35 @@
     <input type="submit" value="Submit">
   </form>
 </body>
+<script>
+  $(function() {
+
+    // request data every 5 seconds
+    setInterval(requestData, 1000);
+
+    function requestData() {
+
+      // ajax request for latest sensor data
+      $.get("/deletetimer_data")
+        .done(function(data) {
+
+          console.log(data);  // debugging - remove when satisfied
+
+          if (data) { // if the returned data is not null, update the values
+            if(data.enable_delete_button > 0){
+              document.getElementById("timerForm").style.display = "none";
+              document.getElementById("resetingTimerMsg").style.display = "inline";
+            } else {
+              document.getElementById("timerForm").style.display = "inline";
+              document.getElementById("resetingTimerMsg").style.display = "none";
+            }
+          } else { // a problem occurred
+            $("#remaining_time").text("?");
+          }
+        }).fail(function() {
+          console.log("The was a problem retrieving the data.");
+        });
+    }
+  });
+</script>
 </html>

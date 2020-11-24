@@ -76,6 +76,7 @@ unsigned long timer_end_millis = 0;
 unsigned long timer_current = 0;
 
 bool send_updated_timer = false;
+bool reseting_timer = false;
 
 void setup() {
   // Initialize serial communication (used for debugging)
@@ -292,8 +293,10 @@ void onReceiveLora(int packetSize) {
     message += (char)LoRa.read(); // Read a new value from the RX buffer
   }
 
+  Serial.print("LoRaRX Timestamp: ");
+  Serial.println(millis());
   // Show the received message in serial monitor
-  Serial.print("Gateway Received: ");
+  Serial.print("LoRaRX Received: ");
   Serial.println(message);
 
   // Parse message
@@ -325,6 +328,7 @@ void onReceiveLora(int packetSize) {
         if(timer_init_millis == new_timer_init_millis && timer_end_millis == new_timer_end_millis){
           // The timer variables have been updated
           send_updated_timer = false;
+          reseting_timer = false;
           Serial.println("Updated timer variables");
         }else{
           Serial.println("The timer variables haven't been updated");
@@ -460,7 +464,9 @@ void web_server_config(){
   // Route to delete the timer (web page)
   server.on("/deletetimer", HTTP_GET, [](AsyncWebServerRequest *request) {
     timer_init_millis = 0;
-    timer_end_millis = 0; 
+    timer_end_millis = 0;
+    send_updated_timer = true; 
+    reseting_timer = true;
     request->send(SPIFFS, "/settimer.html", String(), false, processor);
   });
 
@@ -505,7 +511,7 @@ void web_server_config(){
     }
   });
 
-  // Route to load a json with the global terminal messages from lora
+  // Route to load a json with the timer data
   server.on("/timer_data", HTTP_GET, [](AsyncWebServerRequest *request) {
     String timer_data = "";
     int enable_button = 1;
@@ -520,6 +526,18 @@ void web_server_config(){
     timer_json += " \"enable_delete_button\": "+String(enable_button)+"}";
     request->send(200, "application/json", timer_json);
   });
+
+  // Route to load a json with the timer data
+  server.on("/deletetimer_data", HTTP_GET, [](AsyncWebServerRequest *request) {
+    String message = "";
+    if(reseting_timer == true){
+      message = "{\"reseting_timer\": 1}";
+    }else{
+      message = "{\"reseting_timer\": 0}";
+    }
+    request->send(200, "application/json", message);
+  });
+
 }
 
 String get_remaining_time(unsigned long timer_end_millis){
