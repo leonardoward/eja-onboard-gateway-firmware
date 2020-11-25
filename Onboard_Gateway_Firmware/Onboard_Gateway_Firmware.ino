@@ -71,8 +71,8 @@ String lora_rx_message = "";
 int timer_end_hours = 0;
 int timer_end_min = 0;
 int timer_end_sec = 0;
-unsigned long timer_init_millis = 0;
-unsigned long timer_end_millis = 0;
+unsigned long timer_end_ts_shared = 0;
+unsigned long timer_end_ts_local = 0;
 unsigned long timer_current = 0;
 
 bool send_updated_timer = false;
@@ -161,8 +161,8 @@ void loop(){
     String messageid = "";
     if(send_updated_timer == true){ // Update the timer values
       message = "{\"type\": \"timer\",";
-      message += " \"init_ms\": \"" + String(timer_init_millis) + "\",";
-      message += " \"end_ms\": \"" + String(timer_end_millis) + "\"}";
+      message += " \"current_ts\": \"" + String(millis()) + "\",";
+      message += " \"end_ts\": \"" + String(timer_end_ts_shared) + "\"}";
       messageid = "Timer Update";
     }else{                          // Send default message
       // Prepare LoRa TX message
@@ -304,8 +304,8 @@ void onReceiveLora(int packetSize) {
   int end_index = message.indexOf(':', init_index);
   String json_param = message.substring(message.indexOf('"', init_index) + 1, end_index - 1);
   String json_value = message.substring(message.indexOf('"', end_index) + 1 , message.indexOf(',', end_index) - 1);
-  unsigned long new_timer_init_millis = 0;
-  unsigned long new_timer_end_millis = 0;
+  unsigned long current_ts_buoy = 0;
+  unsigned long new_timer_end_ts_shared = 0;
   
   if(json_param.equals("type")){
     if(json_value.equals("timer")){     
@@ -313,20 +313,21 @@ void onReceiveLora(int packetSize) {
       end_index = message.indexOf(':', init_index);
       json_param = message.substring(message.indexOf('"', init_index) + 1, end_index - 1);
       json_value = message.substring(message.indexOf('"', end_index) + 1 , message.indexOf(',', end_index) - 1);
-      if(json_param.equals("init_ms")) new_timer_init_millis = strtoul(json_value.c_str(), NULL, 10);
+      if(json_param.equals("current_ts")) current_ts_buoy = strtoul(json_value.c_str(), NULL, 10);
       init_index = message.indexOf(',', end_index);
       end_index = message.indexOf(':', init_index);
       json_param = message.substring(message.indexOf('"', init_index) + 1, end_index - 1);
       json_value = message.substring(message.indexOf('"', end_index) + 1 , message.indexOf(',', end_index) - 1);
-      if(json_param.equals("end_ms")) new_timer_end_millis = strtoul(json_value.c_str(), NULL, 10);
-      Serial.println("Type:timer");
-      Serial.println("Init:"+String(new_timer_init_millis)+" ms");
-      Serial.println("End:"+String(new_timer_end_millis)+" ms");
+      if(json_param.equals("end_ts")) new_timer_end_ts_shared = strtoul(json_value.c_str(), NULL, 10);
+      Serial.println("LoraRX Type:timer");
+      Serial.println("LoRaRX Buoy ts:"+String(current_ts_buoy)+" ms");
+      Serial.println("LoraRX End:"+String(new_timer_end_ts_shared)+" ms");
       if(send_updated_timer == true){               // The device is sending an updater timer
         Serial.println("Checking timer variables...");
         // Check if the timer has been updated in the Buoy
-        if(timer_init_millis == new_timer_init_millis && timer_end_millis == new_timer_end_millis){
-          // The timer variables have been updated
+        if(timer_end_ts_shared == new_timer_end_ts_shared){
+          // The end timestamp has been updated
+          if(timer_end_ts_shared > 0) timer_end_ts_local = millis() + timer_end_ts_shared - current_ts_buoy;
           send_updated_timer = false;
           reseting_timer = false;
           Serial.println("Updated timer variables");
@@ -334,10 +335,10 @@ void onReceiveLora(int packetSize) {
           Serial.println("The timer variables haven't been updated");
         }
       }else{
-        timer_init_millis = new_timer_init_millis;
-        timer_end_millis = new_timer_end_millis;
+        timer_end_ts_shared = new_timer_end_ts_shared;
+        if(timer_end_ts_shared > 0 && timer_end_ts_local != timer_end_ts_shared) timer_end_ts_local = millis() + timer_end_ts_shared - current_ts_buoy;
       }
-      String timer_data = get_remaining_time(timer_end_millis);     
+      String timer_data = get_remaining_time(timer_end_ts_local);     
       Serial.println("Timer Data:"+timer_data);
     } 
   }
@@ -454,7 +455,7 @@ void web_server_config(){
 
   // Route to change the timer (web page)
   server.on("/timer", HTTP_GET, [](AsyncWebServerRequest *request) {
-    if(timer_end_millis > timer_init_millis){
+    if(timer_end_ts_local > millis()){
       request->send(SPIFFS, "/gettimer.html", String(), false, processor);
     } else {
       request->send(SPIFFS, "/settimer.html", String(), false, processor);
@@ -463,8 +464,8 @@ void web_server_config(){
 
   // Route to delete the timer (web page)
   server.on("/deletetimer", HTTP_GET, [](AsyncWebServerRequest *request) {
-    timer_init_millis = 0;
-    timer_end_millis = 0;
+    timer_end_ts_shared = 0;
+    timer_end_ts_local = 0;
     send_updated_timer = true; 
     reseting_timer = true;
     request->send(SPIFFS, "/settimer.html", String(), false, processor);
@@ -495,16 +496,16 @@ void web_server_config(){
       timer_end_sec = inputSec.toInt();
       if (0 > timer_end_sec || 59 < timer_end_sec) timer_end_sec = 0;
     }
-    timer_init_millis = millis();
-    timer_end_millis = timer_init_millis + timer_end_sec * 1000 + timer_end_min * 60 * 1000 + timer_end_hours * 60 * 60 * 1000;
-    timer_end_hours = 0;
-    timer_end_min = 0;
-    timer_end_sec = 0;
-    //Serial.println("Time Input - Hours : " + inputHours + " - Min : " + inputMin + " - Sec : " + inputSec);
+    timer_end_ts_local = millis() + timer_end_sec * 1000 + timer_end_min * 60 * 1000 + timer_end_hours * 60 * 60 * 1000;
+    Serial.println("Time Input - Hours : " + inputHours + " - Min : " + inputMin + " - Sec : " + inputSec);
     terminal_messages += "Time Input - H:" + inputHours + " - M:" + inputMin + " - S:" + inputSec;
     //request->send(200, "text/html", "HTTP GET request sent to Buoy B<br>Hours : " + inputHours + "<br>Min : " + inputMin + "<br>Sec : " + inputSec + "<br><a href=\"/\">Return to Home Page</a>");
-    if(timer_end_millis > timer_init_millis){
-      send_updated_timer = true;                                            // Update timer in Buoy
+    if((timer_end_sec > 0) || (timer_end_min > 0) || (timer_end_hours > 0)){
+      send_updated_timer = true;                // Update timer in Buoy
+      timer_end_ts_shared = timer_end_ts_local;
+      timer_end_hours = 0;
+      timer_end_min = 0;
+      timer_end_sec = 0;
       request->send(SPIFFS, "/gettimer.html", String(), false, processor);
     } else {
       request->send(SPIFFS, "/settimer.html", String(), false, processor);
@@ -520,7 +521,7 @@ void web_server_config(){
       timer_data = "Updating timer in Buoy...";
       enable_button = 0;
     }else{
-      timer_data = get_remaining_time(timer_end_millis);
+      timer_data = get_remaining_time(timer_end_ts_local);
     }
     timer_json = "{\"remaining_time\": \"" + timer_data +"\",";
     timer_json += " \"enable_delete_button\": "+String(enable_button)+"}";
